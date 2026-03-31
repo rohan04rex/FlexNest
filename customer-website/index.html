@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="flexnestApp">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlexNest | Fashion E-Commerce</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Custom CSS -->
+    <link href="style.css?v=5" rel="stylesheet">
+    <!-- AngularJS via CDN -->
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+    <script src="app.js?v=8"></script>
+</head>
+
+<body ng-controller="MainController">
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light glass-nav fixed-top px-3 px-lg-5">
+        <a class="navbar-brand fw-bold font-outfit fs-3 tracking-tighter" href="#" ng-click="backToShop()">FLEXNEST</a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="mainNav">
+            <ul class="navbar-nav mx-auto mb-2 mb-lg-0 fw-bold fs-6 text-uppercase" ng-show="!isCheckoutView">
+                <li class="nav-item px-2"><a class="nav-link active" href="#">Home</a></li>
+                <li class="nav-item px-2"><a class="nav-link" href="shop.html">Shop</a></li>
+                <li class="nav-item px-2"><a class="nav-link" href="about.html">About Us</a></li>
+                <li class="nav-item px-2"><a class="nav-link" href="#">FAQ</a></li>
+                <li class="nav-item px-2"><a class="nav-link" href="#">Contact Us</a></li>
+            </ul>
+            <ul class="navbar-nav mx-auto mb-2 mb-lg-0 fw-bold fs-6 text-uppercase text-muted" ng-show="isCheckoutView">
+                <li class="nav-item py-2">Secure Checkout</li>
+            </ul>
+
+            <div class="d-flex align-items-center gap-3">
+                <a href="#" class="text-dark hover-scale" ng-click="toggleSearch()" ng-show="!isCheckoutView"><i
+                        class="bi bi-search fs-4"></i></a>
+                <a href="#" class="text-dark hover-scale position-relative" data-bs-toggle="offcanvas"
+                    data-bs-target="#wishlistOffcanvas">
+                    <i class="bi bi-heart fs-4"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                        ng-if="getWishlistCount() > 0" style="font-size: 0.65em;">
+                        {{ getWishlistCount() }}
+                    </span>
+                </a>
+                <a href="#" class="text-dark position-relative hover-scale" data-bs-toggle="offcanvas"
+                    data-bs-target="#cartOffcanvas">
+                    <i class="bi bi-bag fs-4"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-dark"
+                        ng-if="getCartCount() > 0">
+                        {{ getCartCount() }}
+                        <span class="visually-hidden">items in cart</span>
+                    </span>
+                </a>
+                <div class="dropdown ms-2">
+                    <a href="#" class="text-dark d-flex align-items-center gap-2 text-decoration-none dropdown-toggle"
+                        data-bs-toggle="dropdown" aria-expanded="false" style="border: none;">
+                        <div class="rounded-circle bg-light d-flex align-items-center justify-content-center"
+                            style="width: 45px; height: 45px;">
+                            <i class="bi bi-person-fill fs-4"></i>
+                        </div>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end border-0 shadow-sm">
+                        <li ng-if="!currentUser"><a class="dropdown-item fw-bold" href="#" data-bs-toggle="modal"
+                                data-bs-target="#authModal" ng-click="authMode='login'">Login</a></li>
+                        <li ng-if="!currentUser"><a class="dropdown-item fw-bold" href="#" data-bs-toggle="modal"
+                                data-bs-target="#authModal" ng-click="authMode='register'">Register</a></li>
+                        <li ng-if="currentUser"><span class="dropdown-item text-muted small">Welcome,
+                                {{currentUser.name}}</span></li>
+                        <li ng-if="currentUser">
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li ng-if="currentUser"><a class="dropdown-item text-danger fw-bold" href="#"
+                                ng-click="logout()">Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Search Overlay -->
+    <div class="p-3 border-bottom w-100 search-overlay" style="position: fixed; top: 80px; z-index: 1020;"
+        ng-show="searchOpen">
+        <div class="container d-flex">
+            <input type="text" id="searchInput"
+                class="form-control form-control-lg border-0 bg-transparent text-center font-outfit fs-4 shadow-none"
+                placeholder="Search products, brands..." ng-model="searchQuery">
+            <button class="btn btn-close my-auto" ng-click="toggleSearch()"></button>
+        </div>
+    </div>
+
+    <!-- MAIN STORE VIEW -->
+    <div ng-show="!isCheckoutView">
+
+        <!-- Hero Section -->
+        <section class="hero-section reveal">
+            <div class="hero-banner">
+                <div class="hero-content">
+                    <h1 class="hero-title">Crafting Better<br>Experience For<br>Your Style</h1>
+                    <p class="hero-subtitle">GET READY FOR AN ELECTRIFYING SHOPPING EXPERIENCE. OFFERING DEALS FOR A
+                        LIMITED TIME.</p>
+                </div>
+                <div class="hero-card">
+                    <img src="herocard.jpg" alt="Fashion of the week">
+                    <h5 class="font-outfit fw-bold mb-0">FASHION OF THE WEEK</h5>
+                    <p class="text-muted small mb-0 mt-1 d-flex align-items-center justify-content-between">
+                        Explore Collection <i class="bi bi-arrow-right-circle-fill fs-5 text-dark hover-scale"></i>
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recently Added -->
+        <section class="container mt-5 reveal">
+            <div class="text-center">
+                <h2 class="font-outfit fw-bold">RECENTLY ADDED</h2>
+                <p class="text-muted fs-sm text-uppercase" style="letter-spacing: 1px;">The latest additions to our
+                    collection — shop what's new.</p>
+            </div>
+        </section>
+
+        <!-- Product Grid -->
+        <section class="container mt-4 mb-5 pb-5">
+            <div class="row g-4">
+                <div class="col-12 col-md-6 col-lg-3 reveal" ng-repeat="product in recentProducts">
+                    <div class="product-card">
+                        <div class="card-img-wrapper">
+                            <img ng-src="{{product.image}}" class="card-img-top" alt="{{product.name}}">
+                            <div class="product-overlay">
+                                <button class="btn-action" ng-click="addToCart(product)" title="Add to Cart"><i
+                                        class="bi bi-bag-plus"></i></button>
+                                <button class="btn-action" title="Quick View"><i class="bi bi-eye"></i></button>
+                                <button class="btn-action" title="Wishlist" ng-click="toggleWishlist(product)">
+                                    <i class="bi"
+                                        ng-class="isInWishlist(product) ? 'bi-heart-fill text-danger' : 'bi-heart'"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="product-brand">{{product.brand}}</div>
+                            <h5 class="product-title">{{product.name}}</h5>
+                            <div class="product-price">${{product.price | number:2}}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-5">
+                <a href="shop.html" class="btn btn-dark rounded-pill px-5 py-3 fw-bold text-uppercase">View All
+                    Products</a>
+            </div>
+        </section>
+
+        <!-- Collection Section -->
+        <section class="container mb-5 reveal">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="collection-card">
+                        <img src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?q=80&w=2000&auto=format&fit=crop"
+                            class="collection-img" alt="Collection Image">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="collection-card orange-bg">
+                        <h3 class="mb-3">ACE COLLECTION</h3>
+                        <p class="fw-medium fs-5">ESSENTIALS THAT ARE ANYTHING BUT BASIC.</p>
+                        <p class="small opacity-75 mt-4 text-uppercase" style="line-height: 1.8;">
+                            Every day, every week, the ace collection makes your closet less lonely. With long-lasting,
+                            timeless staples... GET DRESSED, STOCK YOUR WARDROBE.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Everyday Adjustment Section -->
+        <section class="container mb-5 pb-5 reveal">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h2 class="font-outfit fw-bold display-5">ADJUST TO YOUR EVERYDAY CLOTHING NEEDS!</h2>
+                </div>
+                <div class="col-md-6 text-md-end d-flex align-items-end justify-content-md-end">
+                    <p class="text-uppercase fw-bold text-muted fs-sm mb-2">Get ready for an electrifying<br>shopping
+                        experience!</p>
+                </div>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <img src="everyday1.jpg" class="everyday-img everyday-large" alt="Everyday fashion">
+                </div>
+                <div class="col-md-6 d-flex flex-column gap-4">
+                    <img src="https://i.pinimg.com/736x/e0/f6/82/e0f6829f40297abbd96822a9e4019a1e.jpg"
+                        class="everyday-img" alt="Women's fashion">
+                    <img src="https://i.pinimg.com/1200x/9f/6c/f5/9f6cf58a050881e95f6a237c5c53c43e.jpg"
+                        class="everyday-img" alt="Fashion detail">
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- CHECKOUT VIEW (ng-show toggled) -->
+    <div ng-show="isCheckoutView" class="container mt-5 pt-3 mb-5 pb-5">
+        <h2 class="font-outfit fw-bold mb-4">Checkout <a href="#" ng-click="backToShop()"
+                class="btn btn-sm btn-outline-dark float-end"><i class="bi bi-arrow-left"></i> Back to Shop</a></h2>
+
+        <div class="row" ng-if="!orderPlaced">
+            <div class="col-lg-8 mb-4">
+                <div class="card border-0 bg-light p-4 rounded-4">
+                    <h4 class="fw-bold mb-4 font-outfit">Shipping Information</h4>
+                    <form ng-submit="placeOrder()">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label text-muted fs-sm">Full name</label>
+                                <input type="text" class="form-control form-control-lg border-0 bg-white" readonly
+                                    ng-model="checkoutData.name">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label text-muted fs-sm">Email</label>
+                                <input type="email" class="form-control form-control-lg border-0 bg-white" readonly
+                                    ng-model="checkoutData.email">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label text-muted fs-sm">Shipping Address</label>
+                                <input type="text" class="form-control form-control-lg border-0" required
+                                    ng-model="checkoutData.address" placeholder="Enter full delivery address">
+                            </div>
+                        </div>
+
+                        <h4 class="fw-bold mb-4 mt-5 font-outfit">Payment Options</h4>
+                        <div class="p-3 border rounded bg-white mb-4">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="radio" name="paymentOption" id="payOnline"
+                                    value="Online" ng-model="checkoutData.paymentMethod" required>
+                                <label class="form-check-label fw-bold" for="payOnline">Online Procedure (QR
+                                    Code)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="paymentOption" id="payCOD"
+                                    value="COD" ng-model="checkoutData.paymentMethod" required>
+                                <label class="form-check-label fw-bold" for="payCOD">Cash on Delivery</label>
+                            </div>
+
+                            <!-- QR Demo Box (Shows only if Online is selected) -->
+                            <div class="mt-4 text-center border p-4 rounded bg-light"
+                                ng-show="checkoutData.paymentMethod === 'Online'">
+                                <h5 class="fw-bold mb-3">Scan to Pay Online</h5>
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=FlexnestCheckoutDemo"
+                                    alt="QR Code" class="img-fluid mb-3 rounded shadow-sm border">
+                                <p class="text-muted small mb-0">Please scan the QR code above using your payment app.
+                                </p>
+                            </div>
+                        </div>
+
+                        <button type="submit"
+                            class="btn btn-dark btn-lg w-100 py-3 rounded-pill fw-bold text-uppercase mt-3"
+                            ng-disabled="processingOrder">
+                            {{ checkoutData.paymentMethod === 'Online' ? 'Next & Complete Payment ($' + (getCartTotal()
+                            | number:2) + ')' : 'Confirm Order (COD)' }}
+                            <span class="spinner-border spinner-border-sm ms-2" ng-show="processingOrder"></span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card border border-2 border-light shadow-sm rounded-4 p-4 pos-sticky" style="top: 100px;">
+                    <h4 class="fw-bold mb-4 font-outfit">Order Summary</h4>
+
+                    <div class="d-flex gap-3 mb-3 border-bottom pb-3" ng-repeat="item in cart">
+                        <img ng-src="{{item.product.image}}" alt="{{item.product.name}}" class="rounded"
+                            style="width: 60px; height: 80px; object-fit: cover;">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1 fw-bold fs-sm">{{item.product.name}}</h6>
+                            <div class="d-flex justify-content-between text-muted fs-sm">
+                                <span>Qty: {{item.quantity}}</span>
+                                <span class="fw-bold text-dark">${{item.product.price * item.quantity |
+                                    number:2}}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4 fs-5 fw-bold">
+                        <span>Total</span>
+                        <span>${{ getCartTotal() | number:2 }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Placed Success View -->
+        <div ng-if="orderPlaced" class="text-center py-5 vh-100">
+            <div class="d-inline-flex align-items-center justify-content-center bg-success text-white rounded-circle mb-4"
+                style="width: 80px; height: 80px;">
+                <i class="bi bi-check-lg display-5"></i>
+            </div>
+            <h1 class="font-outfit fw-bold display-5">Order Placed Successfully!</h1>
+            <p class="text-muted lead mb-5">Thank you for your purchase. Your items will be shipped soon.</p>
+
+            <!-- Order Summary Details -->
+            <div class="card text-start mx-auto shadow-sm border-0 mb-5" style="max-width: 600px;">
+                <div class="card-header bg-light fw-bold">Order Summary (#ORD-{{ orderId | number:0 }})</div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center"
+                        ng-repeat="item in orderSummary">
+                        {{ item.product.name }} (x{{ item.quantity }})
+                        <span>${{ item.product.price * item.quantity | number:2 }}</span>
+                    </li>
+                </ul>
+            </div>
+
+            <button class="btn btn-dark btn-lg rounded-pill px-5 py-3" ng-click="backToShop()">Continue
+                Shopping</button>
+        </div>
+    </div>
+
+
+    <!-- Footer -->
+    <footer ng-show="!isCheckoutView">
+        <div class="container">
+            <div class="row g-5">
+                <div class="col-md-4">
+                    <h2 class="font-outfit fw-bold mb-4 tracking-tighter">FLEXNEST</h2>
+                    <div class="d-flex gap-3">
+                        <a href="#" class="text-white hover-scale fs-5"><i class="bi bi-instagram"></i></a>
+                        <a href="#" class="text-white hover-scale fs-5"><i class="bi bi-facebook"></i></a>
+                        <a href="#" class="text-white hover-scale fs-5"><i class="bi bi-tiktok"></i></a>
+                        <a href="#" class="text-white hover-scale fs-5"><i class="bi bi-pinterest"></i></a>
+                    </div>
+                    <p class="text-muted mt-4 fs-sm">&copy; 2026 FLEXNEST. ALL RIGHTS RESERVED.</p>
+                </div>
+                <div class="col-md-2 offset-md-2">
+                    <div class="footer-links">
+                        <a href="#">Home</a>
+                        <a href="#">Shop</a>
+                        <a href="about.html">About Us</a>
+                        <a href="#">Retailers</a>
+                        <a href="#">Contact Us</a>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <h5 class="fw-bold mb-3 font-outfit">Newsletter</h5>
+                    <p class="text-muted fs-sm">Subscribe to receive updates, access to exclusive deals, and more.</p>
+                    <div class="input-group mb-3">
+                        <input type="email" class="form-control bg-transparent border-secondary text-white"
+                            placeholder="Enter your email address">
+                        <button class="btn btn-outline-light" type="button">Subscribe</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Wishlist Offcanvas -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="wishlistOffcanvas">
+        <div class="offcanvas-header border-bottom">
+            <h5 class="offcanvas-title font-outfit fw-bold">Your Wishlist ({{ getWishlistCount() }})</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body">
+            <div ng-if="wishlist.length === 0" class="text-center py-5 text-muted">
+                <i class="bi bi-heart fs-1"></i>
+                <p class="mt-3">Your wishlist is currently empty.</p>
+                <button class="btn btn-dark w-100 rounded-pill" data-bs-dismiss="offcanvas">Continue Shopping</button>
+            </div>
+
+            <div class="cart-items" ng-if="wishlist.length > 0">
+                <div class="d-flex gap-3 mb-4" ng-repeat="item in wishlist">
+                    <img ng-src="{{item.image}}" alt="{{item.name}}" class="rounded"
+                        style="width: 80px; height: 100px; object-fit: cover;">
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between">
+                            <h6 class="mb-0 fw-bold">{{item.name}}</h6>
+                            <button class="btn btn-sm text-danger p-0" ng-click="removeFromWishlist($index)"><i
+                                    class="bi bi-x-circle-fill"></i></button>
+                        </div>
+                        <small class="text-muted d-block">{{item.brand}}</small>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <span class="fw-bold">${{item.price | number:2}}</span>
+                            <button class="btn btn-sm btn-outline-dark px-3 rounded-pill"
+                                ng-click="addToCart(item); removeFromWishlist($index)">Move to Cart</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cart Offcanvas -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="cartOffcanvas">
+        <div class="offcanvas-header border-bottom">
+            <h5 class="offcanvas-title font-outfit fw-bold">Your Cart ({{ getCartCount() }})</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body">
+            <div ng-if="cart.length === 0" class="text-center py-5 text-muted">
+                <i class="bi bi-cart-x fs-1"></i>
+                <p class="mt-3">Your cart is currently empty.</p>
+                <button class="btn btn-dark w-100 rounded-pill" data-bs-dismiss="offcanvas">Continue Shopping</button>
+            </div>
+
+            <div class="cart-items" ng-if="cart.length > 0">
+                <div class="d-flex gap-3 mb-4" ng-repeat="item in cart">
+                    <img ng-src="{{item.product.image}}" alt="{{item.product.name}}" class="rounded"
+                        style="width: 80px; height: 100px; object-fit: cover;">
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between">
+                            <h6 class="mb-0 fw-bold">{{item.product.name}}</h6>
+                            <button class="btn btn-sm text-danger p-0" ng-click="removeFromCart($index)"><i
+                                    class="bi bi-trash"></i></button>
+                        </div>
+                        <small class="text-muted d-block">{{item.product.brand}}</small>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <div class="d-flex align-items-center border rounded">
+                                <button class="btn btn-sm px-2 border-0"
+                                    ng-click="item.quantity = item.quantity > 1 ? item.quantity - 1 : 1">-</button>
+                                <span class="px-2 font-monospace">{{item.quantity}}</span>
+                                <button class="btn btn-sm px-2 border-0"
+                                    ng-click="item.quantity = item.quantity + 1">+</button>
+                            </div>
+                            <span class="fw-bold">${{item.product.price * item.quantity | number:2}}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="offcanvas-footer border-top p-3 bg-light" ng-if="cart.length > 0">
+            <div class="d-flex justify-content-between mb-3 fw-bold fs-5">
+                <span>Total:</span>
+                <span>${{ getCartTotal() | number:2 }}</span>
+            </div>
+            <button class="btn btn-dark w-100 rounded-pill py-3 fw-bold" data-bs-dismiss="offcanvas"
+                ng-click="goToCheckout()">Proceed to Checkout</button>
+        </div>
+    </div>
+
+    <!-- Auth Modal -->
+    <div class="modal fade" id="authModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow-lg" style="background-color: #fff;">
+                <div class="modal-header border-0 pb-0 mt-2">
+                    <ul class="nav nav-pills w-100" style="gap: 5px;">
+                        <li class="nav-item flex-fill">
+                            <a class="nav-link fw-bold text-center" style="cursor: pointer;"
+                                ng-class="{'active bg-dark': authMode==='login', 'text-dark': authMode!=='login'}"
+                                ng-click="authMode='login'; authError=''">Login</a>
+                        </li>
+                        <li class="nav-item flex-fill">
+                            <a class="nav-link fw-bold text-center" style="cursor: pointer;"
+                                ng-class="{'active bg-dark': authMode==='register', 'text-dark': authMode!=='register'}"
+                                ng-click="authMode='register'; authError=''">Register</a>
+                        </li>
+                    </ul>
+                    <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" id="closeAuthModal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="alert alert-danger py-2 border-0" ng-show="authError">
+                        <i class="bi bi-exclamation-circle-fill me-2"></i>{{authError}}
+                    </div>
+
+                    <!-- LOGIN FORM -->
+                    <form ng-submit="authSubmit()" ng-if="authMode === 'login'">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Email Address</label>
+                            <input type="email" class="form-control form-control-lg bg-light border-0 rounded-3" ng-model="loginForm.email" required placeholder="name@example.com">
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label text-muted small fw-bold">Password</label>
+                            <input type="password" class="form-control form-control-lg bg-light border-0 rounded-3" ng-model="loginForm.password" required placeholder="Enter your password">
+                        </div>
+                        <button type="submit" class="btn btn-dark btn-lg w-100 rounded-pill fw-bold" ng-disabled="authLoading">
+                            Sign In
+                            <span class="spinner-border spinner-border-sm ms-2" ng-show="authLoading"></span>
+                        </button>
+                    </form>
+
+                    <!-- REGISTER FORM -->
+                    <form ng-submit="authSubmit()" ng-if="authMode === 'register'">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Full Name</label>
+                            <input type="text" class="form-control form-control-lg bg-light border-0 rounded-3" ng-model="registerForm.name" required placeholder="e.g. Jane Doe">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Email Address</label>
+                            <input type="email" class="form-control form-control-lg bg-light border-0 rounded-3" ng-model="registerForm.email" required placeholder="name@example.com">
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label text-muted small fw-bold">Password</label>
+                            <input type="password" class="form-control form-control-lg bg-light border-0 rounded-3" ng-model="registerForm.password" required placeholder="Create a secure password">
+                        </div>
+                        <button type="submit" class="btn btn-dark btn-lg w-100 rounded-pill fw-bold" ng-disabled="authLoading">
+                            Create Account
+                            <span class="spinner-border spinner-border-sm ms-2" ng-show="authLoading"></span>
+                        </button>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Lenis Smooth Scrolling -->
+    <script src="https://unpkg.com/@studio-freight/lenis@1.0.35/dist/lenis.min.js"></script>
+    <script>
+        const lenis = new Lenis({
+            duration: 1.2,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            smooth: true
+        });
+
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+
+        requestAnimationFrame(raf);
+    </script>
+
+    <!-- Scroll Reveal -->
+    <script>
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('revealed');
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+
+        function initReveal() {
+            document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+        }
+
+        // Run once DOM is ready, then re-run after AngularJS renders
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(initReveal, 300);
+        });
+    </script>
+</body>
+
+</html>
