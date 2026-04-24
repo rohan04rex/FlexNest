@@ -1,27 +1,36 @@
+const mysql = require('mysql2/promise');
 const bcrypt = require('bcryptjs');
-const db = require('./config/db');
 
-async function createAdmin() {
+async function run() {
+    const connection = await mysql.createConnection({
+        host: 'shortline.proxy.rlwy.net',
+        port: 42165,
+        user: 'root',
+        password: 'joZZybNhsVYLaBTboVFevGrbbQJQDqxy',
+        database: 'railway'
+    });
+
+    const email = 'admin@flexnest.com';
+    const password = 'admin123';
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     try {
-        const hashedPassword = await bcrypt.hash('admin123', 10);
-        
-        // Remove old admin if exists
-        await db.query('DELETE FROM users WHERE email = ?', ['admin@flexnest.com']);
-        
-        // Insert new admin
-        await db.query(
+        await connection.query(
             "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, 'admin')",
-            ['Flexnest Admin', 'admin@flexnest.com', hashedPassword]
+            ['Admin', email, hashedPassword]
         );
-        
-        console.log('✅ Admin user created successfully!');
-        console.log('Email: admin@flexnest.com');
-        console.log('Password: admin123');
-        process.exit(0);
+        console.log('Admin user created!');
+        console.log('Email:', email);
+        console.log('Password:', password);
     } catch (err) {
-        console.error('Error creating admin:', err);
-        process.exit(1);
+        if (err.code === 'ER_DUP_ENTRY') {
+            console.log('Admin user already exists');
+        } else {
+            console.error('Error:', err.message);
+        }
+    } finally {
+        await connection.end();
     }
 }
 
-createAdmin();
+run();
