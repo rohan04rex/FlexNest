@@ -15,12 +15,14 @@ const productRoutes = require('./routes/products');
 const cartRoutes = require('./routes/cart');
 const orderRoutes = require('./routes/orders');
 const paymentRoutes = require('./routes/payments');
+const contactRoutes = require('./routes/contact');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/contact', contactRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

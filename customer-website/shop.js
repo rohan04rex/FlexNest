@@ -29,6 +29,46 @@ app.controller('ShopController', function($scope, $http, $timeout) {
 
     // --- Auth: restore session ---
     $scope.currentUser = JSON.parse(sessionStorage.getItem('flexnest_user')) || null;
+    $scope.authMode = 'login';
+    $scope.loginForm = {};
+    $scope.registerForm = {};
+    $scope.authLoading = false;
+    $scope.authError = '';
+
+    $scope.authSubmit = function() {
+        $scope.authLoading = true;
+        $scope.authError = '';
+        var payload = $scope.authMode === 'login' ? angular.copy($scope.loginForm) : angular.copy($scope.registerForm);
+        payload.action = $scope.authMode;
+
+        $http.post('../php-api/auth.php', payload)
+            .then(function(res) {
+                if (res.data.success) {
+                    $scope.currentUser = res.data.user;
+                    sessionStorage.setItem('flexnest_user', JSON.stringify($scope.currentUser));
+                    loadUserCart();
+                    document.getElementById('closeAuthModal').click();
+                    $scope.loginForm = {};
+                    $scope.registerForm = {};
+                } else {
+                    $scope.authError = res.data.message || 'Authentication failed';
+                }
+            })
+            .catch(function(err) {
+                console.error("Auth error:", err);
+                $scope.authError = 'Server error during authentication. Is XAMPP Apache running?';
+            })
+            .finally(function() {
+                $scope.authLoading = false;
+            });
+    };
+
+    $scope.logout = function() {
+        $scope.currentUser = null;
+        sessionStorage.removeItem('flexnest_user');
+        $scope.cart = [];
+        $scope.wishlist = [];
+    };
 
     // --- Load cart & wishlist ---
     function loadUserCart() {
@@ -265,4 +305,125 @@ app.controller('ShopController', function($scope, $http, $timeout) {
         });
         return total;
     };
+
+    // ============================================================
+    // AI FEATURE 1: Product Recommendations (Sidebar)
+    // ============================================================
+    $scope.recommendations = [];
+    $scope.recommendationsLoading = false;
+
+    $scope.loadRecommendations = function() {
+        $scope.recommendationsLoading = true;
+        var payload = {
+            user_id: $scope.currentUser ? $scope.currentUser.id : null,
+            cart_items: $scope.cart || []
+        };
+
+        $http.post('../php-api/recommendations.php', payload)
+            .then(function(res) {
+                if (res.data.success && res.data.recommendations) {
+                    $scope.recommendations = res.data.recommendations.slice(0, 3);
+                }
+            })
+            .catch(function(err) {
+                console.error('Recommendations error:', err);
+            })
+            .finally(function() {
+                $scope.recommendationsLoading = false;
+            });
+    };
+
+    $timeout(function() {
+        $scope.loadRecommendations();
+    }, 1500);
+
+    // ============================================================
+    // AI FEATURE 2: Chatbot
+    // ============================================================
+    $scope.chatOpen = false;
+    $scope.chatMessages = [];
+    $scope.chatInput = '';
+    $scope.chatSending = false;
+    $scope.chatShowLabel = true;
+
+    $scope.chatMessages.push({
+        sender: 'bot',
+        text: "Hey there! 👋 I'm FlexBot, your personal shopping assistant. Need help finding the perfect outfit?"
+    });
+
+    $scope.toggleChat = function() {
+        $scope.chatOpen = !$scope.chatOpen;
+        $scope.chatShowLabel = false;
+        if ($scope.chatOpen) {
+            $timeout(function() {
+                $scope.scrollChatToBottom();
+                var input = document.getElementById('chatbotInput');
+                if (input) input.focus();
+            }, 100);
+        }
+    };
+
+    $scope.scrollChatToBottom = function() {
+        $timeout(function() {
+            var msgContainer = document.getElementById('chatbotMessages');
+            if (msgContainer) {
+                msgContainer.scrollTop = msgContainer.scrollHeight;
+            }
+        }, 50);
+    };
+
+    $scope.sendChatMessage = function() {
+        var msg = ($scope.chatInput || '').trim();
+        if (!msg || $scope.chatSending) return;
+
+        $scope.chatMessages.push({ sender: 'user', text: msg });
+        $scope.chatInput = '';
+        $scope.chatSending = true;
+        $scope.scrollChatToBottom();
+
+        var history = [];
+        var recentMessages = $scope.chatMessages.slice(-11, -1);
+        angular.forEach(recentMessages, function(m) {
+            history.push({ sender: m.sender, text: m.text });
+        });
+
+        var payload = {
+            user_id: $scope.currentUser ? $scope.currentUser.id : null,
+            message: msg,
+            conversation_history: history
+        };
+
+        $http.post('../php-api/chatbot.php', payload)
+            .then(function(res) {
+                if (res.data.success && res.data.reply) {
+                    $scope.chatMessages.push({ sender: 'bot', text: res.data.reply });
+                } else {
+                    $scope.chatMessages.push({ sender: 'bot', text: "Sorry, I couldn't process that. Please try again!" });
+                }
+            })
+            .catch(function(err) {
+                console.error('Chatbot error:', err);
+                $scope.chatMessages.push({ sender: 'bot', text: "I'm having trouble connecting right now. Please try again in a moment! 😊" });
+            })
+            .finally(function() {
+                $scope.chatSending = false;
+                $scope.scrollChatToBottom();
+            });
+    };
+
+    $scope.sendQuickAction = function(action) {
+        $scope.chatInput = action;
+        $scope.sendChatMessage();
+    };
+
+    $scope.handleChatKeypress = function(event) {
+        if (event.keyCode === 13) {
+            $scope.sendChatMessage();
+        }
+    };
+
+    $scope.addRecommendedToCart = function(product) {
+        $scope.addToCart(product);
+    };
 });
+

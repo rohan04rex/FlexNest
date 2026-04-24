@@ -99,6 +99,45 @@ app.controller('MainController', function($scope, $http, $timeout) {
         }
     };
 
+    // --- Contact Us Logic ---
+    $scope.contactForm = {
+        name: '',
+        email: '',
+        message: ''
+    };
+    $scope.contactLoading = false;
+    $scope.contactSuccessMsg = '';
+    $scope.contactErrorMsg = '';
+
+    $scope.submitContact = function() {
+        $scope.contactSuccessMsg = '';
+        $scope.contactErrorMsg = '';
+
+        if (!$scope.currentUser) {
+            $scope.contactErrorMsg = 'Please log in to send a message.';
+            return;
+        }
+
+        $scope.contactLoading = true;
+
+        $http.post('http://localhost:3000/api/contact', $scope.contactForm)
+            .then(function(res) {
+                if (res.data.success) {
+                    $scope.contactSuccessMsg = res.data.message;
+                    $scope.contactForm = { name: '', email: '', message: '' }; // reset form
+                } else {
+                    $scope.contactErrorMsg = res.data.message || 'Failed to submit message.';
+                }
+            })
+            .catch(function(err) {
+                console.error("Contact submit error:", err);
+                $scope.contactErrorMsg = 'Server error during submission. Please try again later.';
+            })
+            .finally(function() {
+                $scope.contactLoading = false;
+            });
+    };
+
     // Mock products with dateAdded for "recently added" sorting
     var mockProducts = [
         { id: 1, name: 'BLACK COTTON T-SHIRT', brand: 'FLEXNEST', price: 49.00, image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=2000&auto=format&fit=crop', gender: 'Men', subcategory: 'Tshirt', dateAdded: '2026-03-23' },
@@ -265,4 +304,130 @@ app.controller('MainController', function($scope, $http, $timeout) {
             $scope.goToCheckout();
         }, 100);
     }
+
+    // ============================================================
+    // AI FEATURE 1: Product Recommendations
+    // ============================================================
+    $scope.recommendations = [];
+    $scope.recommendationsLoading = false;
+    $scope.recommendationsLoaded = false;
+
+    $scope.loadRecommendations = function() {
+        $scope.recommendationsLoading = true;
+        var payload = {
+            user_id: $scope.currentUser ? $scope.currentUser.id : null,
+            cart_items: $scope.cart || []
+        };
+
+        $http.post('../php-api/recommendations.php', payload)
+            .then(function(res) {
+                if (res.data.success && res.data.recommendations) {
+                    $scope.recommendations = res.data.recommendations;
+                    $scope.recommendationsLoaded = true;
+                }
+            })
+            .catch(function(err) {
+                console.error('Recommendations error:', err);
+            })
+            .finally(function() {
+                $scope.recommendationsLoading = false;
+            });
+    };
+
+    // Load recommendations after products load
+    $timeout(function() {
+        $scope.loadRecommendations();
+    }, 1500);
+
+    // ============================================================
+    // AI FEATURE 2: Chatbot
+    // ============================================================
+    $scope.chatOpen = false;
+    $scope.chatMessages = [];
+    $scope.chatInput = '';
+    $scope.chatSending = false;
+    $scope.chatShowLabel = true;
+
+    // Welcome message
+    $scope.chatMessages.push({
+        sender: 'bot',
+        text: "Hey there! 👋 I'm FlexBot, your personal shopping assistant. How can I help you today?"
+    });
+
+    $scope.toggleChat = function() {
+        $scope.chatOpen = !$scope.chatOpen;
+        $scope.chatShowLabel = false;
+        if ($scope.chatOpen) {
+            $timeout(function() {
+                $scope.scrollChatToBottom();
+                var input = document.getElementById('chatbotInput');
+                if (input) input.focus();
+            }, 100);
+        }
+    };
+
+    $scope.scrollChatToBottom = function() {
+        $timeout(function() {
+            var msgContainer = document.getElementById('chatbotMessages');
+            if (msgContainer) {
+                msgContainer.scrollTop = msgContainer.scrollHeight;
+            }
+        }, 50);
+    };
+
+    $scope.sendChatMessage = function() {
+        var msg = ($scope.chatInput || '').trim();
+        if (!msg || $scope.chatSending) return;
+
+        // Add user message
+        $scope.chatMessages.push({ sender: 'user', text: msg });
+        $scope.chatInput = '';
+        $scope.chatSending = true;
+        $scope.scrollChatToBottom();
+
+        // Build conversation history (last 10 messages for context)
+        var history = [];
+        var recentMessages = $scope.chatMessages.slice(-11, -1); // exclude the just-added message
+        angular.forEach(recentMessages, function(m) {
+            history.push({ sender: m.sender, text: m.text });
+        });
+
+        var payload = {
+            user_id: $scope.currentUser ? $scope.currentUser.id : null,
+            message: msg,
+            conversation_history: history
+        };
+
+        $http.post('../php-api/chatbot.php', payload)
+            .then(function(res) {
+                if (res.data.success && res.data.reply) {
+                    $scope.chatMessages.push({ sender: 'bot', text: res.data.reply });
+                } else {
+                    $scope.chatMessages.push({ sender: 'bot', text: "Sorry, I couldn't process that. Please try again!" });
+                }
+            })
+            .catch(function(err) {
+                console.error('Chatbot error:', err);
+                $scope.chatMessages.push({ sender: 'bot', text: "I'm having trouble connecting right now. Please try again in a moment! 😊" });
+            })
+            .finally(function() {
+                $scope.chatSending = false;
+                $scope.scrollChatToBottom();
+            });
+    };
+
+    $scope.sendQuickAction = function(action) {
+        $scope.chatInput = action;
+        $scope.sendChatMessage();
+    };
+
+    $scope.handleChatKeypress = function(event) {
+        if (event.keyCode === 13) {
+            $scope.sendChatMessage();
+        }
+    };
+
+    $scope.addRecommendedToCart = function(product) {
+        $scope.addToCart(product);
+    };
 });

@@ -37,6 +37,7 @@ function App() {
   // State for modules
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [messages, setMessages] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   
   // Dashboard Stats Computed State
@@ -80,6 +81,19 @@ function App() {
     }
   };
 
+  const fetchMessages = async () => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/contact/admin/all`);
+      const formattedMsgs = res.data.map(msg => ({
+        ...msg,
+        date: new Date(msg.created_at).toLocaleString()
+      }));
+      setMessages(formattedMsgs);
+    } catch (err) {
+      console.error("Error fetching messages:", err);
+    }
+  };
+
   useEffect(() => {
     // Check auth on mount
     const token = localStorage.getItem('adminToken');
@@ -101,6 +115,7 @@ function App() {
     if (isLoggedIn) {
       fetchProducts();
       fetchOrders();
+      fetchMessages();
     }
   }, [isLoggedIn]);
 
@@ -337,6 +352,12 @@ function App() {
             </svg>
             Orders
           </div>
+          <div className={`nav-item ${activeTab === 'messages' ? 'active' : ''}`} onClick={() => setActiveTab('messages')}>
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            Messages
+          </div>
         </nav>
       </aside>
 
@@ -347,6 +368,7 @@ function App() {
             {activeTab === 'dashboard' && 'Overview'}
             {activeTab === 'products' && 'Product Management'}
             {activeTab === 'orders' && 'Order Management'}
+            {activeTab === 'messages' && 'Contact Messages'}
           </div>
           <div className="topbar-actions">
             <div style={{display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: 1.2}}>
@@ -553,6 +575,54 @@ function App() {
                             <option value="Shipped">Shipped</option>
                             <option value="Delivered">Delivered</option>
                           </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+
+          {/* MESSAGES TAB */}
+          {activeTab === 'messages' && (
+            <>
+              <div className="section-header">
+                <div>
+                  <h2 className="section-title">Customer Inquiries</h2>
+                  <p className="stat-title" style={{marginBottom: 0}}>View messages submitted through the Contact Us page.</p>
+                </div>
+              </div>
+
+              <div className="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Customer Name</th>
+                      <th>Email</th>
+                      <th>Message</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {messages.length === 0 ? (
+                      <tr><td colSpan="4" style={{textAlign: 'center', padding: '2rem'}}>No messages found.</td></tr>
+                    ) : messages.map(msg => (
+                      <tr key={msg.id}>
+                        <td style={{color: 'var(--text-muted)'}}>{msg.date}</td>
+                        <td style={{fontWeight: 600}}>{msg.name}</td>
+                        <td style={{color: 'var(--primary)'}}><a href={`mailto:${msg.email}`} style={{textDecoration: 'none', color: 'inherit'}}>{msg.email}</a></td>
+                        <td>
+                           <div style={{
+                             maxWidth: '400px', 
+                             whiteSpace: 'pre-wrap', 
+                             background: 'rgba(0,0,0,0.03)', 
+                             padding: '0.75rem', 
+                             borderRadius: '0.5rem',
+                             fontSize: '0.875rem'
+                           }}>
+                             {msg.message}
+                           </div>
                         </td>
                       </tr>
                     ))}

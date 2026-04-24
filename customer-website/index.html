@@ -35,8 +35,7 @@
                 <li class="nav-item px-2"><a class="nav-link active" href="#">Home</a></li>
                 <li class="nav-item px-2"><a class="nav-link" href="shop.html">Shop</a></li>
                 <li class="nav-item px-2"><a class="nav-link" href="about.html">About Us</a></li>
-                <li class="nav-item px-2"><a class="nav-link" href="#">FAQ</a></li>
-                <li class="nav-item px-2"><a class="nav-link" href="#">Contact Us</a></li>
+                <li class="nav-item px-2"><a class="nav-link" href="contact.html">Contact Us</a></li>
             </ul>
             <ul class="navbar-nav mx-auto mb-2 mb-lg-0 fw-bold fs-6 text-uppercase text-muted" ng-show="isCheckoutView">
                 <li class="nav-item py-2">Secure Checkout</li>
@@ -161,7 +160,52 @@
             </div>
         </section>
 
+        <!-- AI Recommendations Section -->
+        <section class="container mt-4 mb-5" ng-show="recommendations.length > 0 || recommendationsLoading" id="ai-recommendations">
+            <div class="ai-recommendations-section reveal">
+                <div class="ai-section-header">
+                    <div class="ai-sparkle-icon"><i class="bi bi-stars"></i></div>
+                    <h3 class="ai-section-title">Recommended For You</h3>
+                </div>
+                <p class="ai-section-subtitle">Personalized picks powered by AI — based on your interests and activity.</p>
+
+                <!-- Loading State -->
+                <div class="row g-3" ng-show="recommendationsLoading">
+                    <div class="col-6 col-md-4 col-lg-2" ng-repeat="i in [1,2,3,4,5,6]">
+                        <div class="ai-skeleton"></div>
+                    </div>
+                </div>
+
+                <!-- Loaded Recommendations -->
+                <div class="row g-3" ng-show="!recommendationsLoading && recommendations.length > 0">
+                    <div class="col-6 col-md-4 col-lg-2" ng-repeat="rec in recommendations">
+                        <div class="ai-product-card">
+                            <div class="card-img-wrapper">
+                                <img ng-src="{{rec.image}}" alt="{{rec.name}}">
+                                <div class="ai-badge"><i class="bi bi-stars"></i> AI Pick</div>
+                                <div class="product-overlay">
+                                    <button class="btn-action" ng-click="addRecommendedToCart(rec)" title="Add to Cart">
+                                        <i class="bi bi-bag-plus"></i>
+                                    </button>
+                                    <button class="btn-action" title="Wishlist" ng-click="toggleWishlist(rec)">
+                                        <i class="bi" ng-class="isInWishlist(rec) ? 'bi-heart-fill text-danger' : 'bi-heart'"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="product-brand">{{rec.brand}}</div>
+                                <h5 class="product-title">{{rec.name}}</h5>
+                                <div class="product-price">${{rec.price | number:2}}</div>
+                                <div class="ai-reason"><i class="bi bi-sparkle"></i> {{rec.ai_reason}}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Collection Section -->
+
         <section class="container mb-5 reveal">
             <div class="row g-4">
                 <div class="col-md-6">
@@ -509,25 +553,68 @@
         </div>
     </div>
 
+    <!-- AI Chatbot Widget -->
+    <div ng-show="!chatOpen && chatShowLabel" class="chatbot-fab-label">💬 Chat with FlexBot</div>
+    <button class="chatbot-fab" ng-click="toggleChat()" ng-show="!chatOpen" title="Chat with FlexBot">
+        <span class="fab-pulse"></span>
+        <i class="bi bi-stars"></i>
+    </button>
+
+    <!-- Chat Window -->
+    <div class="chatbot-window" ng-show="chatOpen">
+        <div class="chatbot-header">
+            <div class="chatbot-header-info">
+                <div class="chatbot-avatar"><i class="bi bi-stars"></i></div>
+                <div class="chatbot-header-text">
+                    <h6>FlexBot</h6>
+                    <small>AI Shopping Assistant</small>
+                </div>
+            </div>
+            <button class="chatbot-close" ng-click="toggleChat()"><i class="bi bi-x-lg"></i></button>
+        </div>
+
+        <div class="chatbot-messages" id="chatbotMessages">
+            <div ng-repeat="msg in chatMessages" class="chat-msg" ng-class="msg.sender">
+                <div class="chat-msg-avatar">
+                    <i ng-if="msg.sender === 'bot'" class="bi bi-stars"></i>
+                    <i ng-if="msg.sender === 'user'" class="bi bi-person-fill"></i>
+                </div>
+                <div class="chat-msg-bubble">{{msg.text}}</div>
+            </div>
+            <!-- Typing Indicator -->
+            <div ng-show="chatSending" class="chat-msg bot">
+                <div class="chat-msg-avatar"><i class="bi bi-stars"></i></div>
+                <div class="typing-indicator">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Action Chips -->
+        <div class="chatbot-chips">
+            <span class="chat-chip" ng-click="sendQuickAction('What are your shipping options?')">🚚 Shipping Info</span>
+            <span class="chat-chip" ng-click="sendQuickAction('Track my recent order')">📦 Track Order</span>
+            <span class="chat-chip" ng-click="sendQuickAction('Suggest some trendy outfits for me')">👗 Suggest Products</span>
+            <span class="chat-chip" ng-click="sendQuickAction('What is your return policy?')">↩️ Returns</span>
+        </div>
+
+        <!-- Input Area -->
+        <div class="chatbot-input-area">
+            <input type="text" id="chatbotInput" ng-model="chatInput" placeholder="Ask FlexBot anything..."
+                ng-keypress="handleChatKeypress($event)" ng-disabled="chatSending">
+            <button class="chatbot-send-btn" ng-click="sendChatMessage()" ng-disabled="chatSending || !chatInput">
+                <i class="bi bi-send-fill"></i>
+            </button>
+        </div>
+    </div>
+
     <!-- Bootstrap Bundle JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- Lenis Smooth Scrolling -->
-    <script src="https://unpkg.com/@studio-freight/lenis@1.0.35/dist/lenis.min.js"></script>
-    <script>
-        const lenis = new Lenis({
-            duration: 1.2,
-            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-            smooth: true
-        });
 
-        function raf(time) {
-            lenis.raf(time);
-            requestAnimationFrame(raf);
-        }
 
-        requestAnimationFrame(raf);
-    </script>
 
     <!-- Scroll Reveal -->
     <script>
@@ -547,6 +634,8 @@
         // Run once DOM is ready, then re-run after AngularJS renders
         document.addEventListener('DOMContentLoaded', () => {
             setTimeout(initReveal, 300);
+            // Re-observe for AI recommendations which load async
+            setTimeout(initReveal, 2500);
         });
     </script>
 </body>
