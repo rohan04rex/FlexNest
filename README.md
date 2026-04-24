@@ -60,13 +60,13 @@ Open your terminal and run the following commands:
 **For the Backend:**
 ```bash
 cd backend
-npm install
+npm install 
 ```
 
 **For the Admin Panel:**
 ```bash
 cd admin-panel
-npm install
+npm install vite@latest
 ```
 
 ### 3. Environment Variables
