@@ -4,7 +4,7 @@ import {
   LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = 'https://flexnest-production.up.railway.app/api';
 
 // Data Mocks
 const chartData = [

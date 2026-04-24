@@ -137,7 +137,7 @@ app.controller('ShopController', function($scope, $http, $timeout) {
 
     $scope.loadProducts = function() {
         $scope.loading = true;
-        $http.get('http://localhost:3000/api/products')
+        $http.get('https://flexnest-production.up.railway.app/api/products')
             .then(function(response) {
                 $scope.products = response.data;
                 $scope.loading = false;

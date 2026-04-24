@@ -120,7 +120,7 @@ app.controller('MainController', function($scope, $http, $timeout) {
 
         $scope.contactLoading = true;
 
-        $http.post('http://localhost:3000/api/contact', $scope.contactForm)
+        $http.post('https://flexnest-production.up.railway.app/api/contact', $scope.contactForm)
             .then(function(res) {
                 if (res.data.success) {
                     $scope.contactSuccessMsg = res.data.message;
@@ -154,7 +154,7 @@ app.controller('MainController', function($scope, $http, $timeout) {
     $scope.recentProducts = [];
 
     // Fetch from API or use mock data, then pick 8 most recent
-    $http.get('http://localhost:3000/api/products')
+    $http.get('https://flexnest-production.up.railway.app/api/products')
         .then(function(response) {
             $scope.products = response.data;
         })
