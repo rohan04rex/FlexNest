@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+pandas
+scikit-learn
+mysql-connector-python
+python-dotenv
+fuzzywuzzy
+python-Levenshtein
+PyJWT
+axios
+openai
